@@ -8,6 +8,7 @@ import javax.swing.*;
 public class FlappyBird extends JPanel implements ActionListener, KeyListener{
     int boardHeight = 640;
     int boardWidth = 360;
+    boolean gameStarted = false;
 
     //Images
     Image backgroundImg;
@@ -115,11 +116,11 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener{
             }
         });
         placeBGTimer.setInitialDelay(0); // starts with 0th millisecond and then delays
-        placeBGTimer.start();
+//        if(gameStarted) placeBGTimer.start();
 
         //Game timer
         gameLoop = new Timer(1000/60, this);
-        gameLoop.start();
+//        if(gameStarted) gameLoop.start();
 
         addMouseListener(new MouseAdapter() {
             @Override
@@ -164,8 +165,20 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener{
             g.drawImage(bg.img, bg.x,bg.y, this.boardWidth, this.boardHeight, null);
         }
 
-        //bird
-        g.drawImage(birdImg, bird.x, bird.y, bird.width, bird.height, null);
+        //bird (static)
+//        g.drawImage(birdImg, bird.x, bird.y, bird.width, bird.height, null);
+
+        Graphics2D g2d = (Graphics2D) g.create();
+        double angle = Math.toRadians(Math.min(Math.max(velocityY * 3, -45), 45));
+
+        // Rotate around the center of the bird
+        int center_X = bird.x + bird.width / 2;
+        int center_Y = bird.y + bird.height / 2;
+
+        g2d.rotate(angle, center_X, center_Y);
+        g2d.drawImage(bird.img, bird.x, bird.y, bird.width, bird.height, null);
+        g2d.dispose();
+
 
         //pipes
         for (int i = 0; i < pipes.size(); i++) {
@@ -175,7 +188,7 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener{
 
         g.setColor(Color.black);
         g.setFont(new Font("Bradley Hand ITC", Font.BOLD, 40));
-        if (gameOver) {
+        if (gameOver && gameStarted) {
             g.setFont(new Font("Bradley Hand ITC", Font.BOLD, 40));
             FontMetrics fm = g.getFontMetrics();
 
@@ -244,7 +257,7 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener{
     public void actionPerformed(ActionEvent e) {
         move();
         repaint();
-        if (gameOver){
+        if (gameOver || !gameStarted) {
             placePipesTimer.stop();
             gameLoop.stop();
             placeBGTimer.stop();
@@ -254,7 +267,15 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener{
 
     @Override
     public void keyPressed(KeyEvent e) {
-        if(e.getKeyCode() == KeyEvent.VK_UP)
+        if (!gameStarted && (e.getKeyCode() == KeyEvent.VK_UP)){
+            gameStarted = true;
+            velocityY = -9;
+
+            placePipesTimer.start();
+            placeBGTimer.start();
+            gameLoop.start();
+        }
+        if(gameStarted && (e.getKeyCode() == KeyEvent.VK_UP))
             velocityY = -9;
     }
 
